@@ -13,6 +13,8 @@ const libros = [
   { id: 5, titulo: 'El señor de los anillos',    autor: 'J.R.R. Tolkien',             precio: 24.99, stock:  0 },
 ];
 
+let siguienteId = 6;
+
 // ─── GET /api/libros/:id ──────────────────────────────────────────────────────
 app.get('/api/libros/:id', (req, res) => {
   const id = parseInt(req.params.id, 10);
@@ -25,6 +27,51 @@ app.get('/api/libros/:id', (req, res) => {
   }
 
   return res.status(200).json(libro);
+});
+
+// ─── POST /api/libros — Insertar un nuevo libro ───────────────────────────────
+app.post('/api/libros', (req, res) => {
+  const { titulo, autor, precio, stock } = req.body;
+
+  if (!titulo || !autor || precio === undefined) {
+    return res.status(400).json({
+      error: 'Faltan datos. Se requieren: titulo, autor y precio.',
+    });
+  }
+
+  const nuevoLibro = {
+    id: siguienteId++,
+    titulo,
+    autor,
+    precio: parseFloat(precio),
+    stock: stock !== undefined ? parseInt(stock, 10) : 0,
+  };
+
+  libros.push(nuevoLibro);
+
+  return res.status(201).json({
+    mensaje: '✅ Libro agregado exitosamente.',
+    libro: nuevoLibro,
+  });
+});
+
+// ─── DELETE /api/libros/:id — Eliminar un libro ───────────────────────────────
+app.delete('/api/libros/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const index = libros.findIndex((l) => l.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({
+      error: `Libro con id ${id} no encontrado. No se pudo eliminar.`,
+    });
+  }
+
+  const eliminado = libros.splice(index, 1)[0];
+
+  return res.status(200).json({
+    mensaje: '🗑️ Libro eliminado exitosamente.',
+    libro: eliminado,
+  });
 });
 
 // ─── Inicio del servidor ──────────────────────────────────────────────────────
