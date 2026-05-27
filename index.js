@@ -17,9 +17,23 @@ const libros = [
 
 let siguienteId = 6;
 
-// ─── GET /api/libros — Listar todos los libros ────────────────────────────────
+// ─── GET /api/libros — Listar todos o filtrar por ?titulo= o ?autor= ──────────
 app.get('/api/libros', (req, res) => {
-  return res.status(200).json({ total: libros.length, libros });
+  const { titulo, autor } = req.query;
+  let resultado = libros;
+
+  if (titulo) {
+    resultado = resultado.filter(l =>
+      l.titulo.toLowerCase().includes(titulo.toLowerCase())
+    );
+  }
+  if (autor) {
+    resultado = resultado.filter(l =>
+      l.autor.toLowerCase().includes(autor.toLowerCase())
+    );
+  }
+
+  return res.status(200).json({ total: resultado.length, libros: resultado });
 });
 
 // ─── GET /api/libros/:id — Obtener un libro por ID ───────────────────────────
