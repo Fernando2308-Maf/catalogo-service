@@ -74,6 +74,39 @@ app.delete('/api/libros/:id', (req, res) => {
   });
 });
 
+// ─── PATCH /api/libros/:id/stock — Reducir stock al comprar ──────────────────
+app.patch('/api/libros/:id/stock', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const { cantidad } = req.body;
+
+  const libro = libros.find((l) => l.id === id);
+
+  if (!libro) {
+    return res.status(404).json({
+      error: `Libro con id ${id} no encontrado.`,
+    });
+  }
+
+  if (cantidad === undefined || cantidad <= 0) {
+    return res.status(400).json({
+      error: 'La cantidad debe ser un número mayor a 0.',
+    });
+  }
+
+  if (libro.stock < cantidad) {
+    return res.status(400).json({
+      error: `Stock insuficiente. Disponible: ${libro.stock}, solicitado: ${cantidad}.`,
+    });
+  }
+
+  libro.stock -= cantidad;
+
+  return res.status(200).json({
+    mensaje: `📦 Stock actualizado correctamente.`,
+    libro,
+  });
+});
+
 // ─── Inicio del servidor ──────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`📚 Servicio de Catálogo corriendo en http://localhost:${PORT}`);
