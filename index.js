@@ -1,7 +1,9 @@
 const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 3001;
+const cors    = require('cors');
+const app     = express();
+const PORT    = process.env.PORT || 3001;
 
+app.use(cors());
 app.use(express.json());
 
 // ─── Base de datos simulada en memoria ───────────────────────────────────────
@@ -15,15 +17,18 @@ const libros = [
 
 let siguienteId = 6;
 
-// ─── GET /api/libros/:id ──────────────────────────────────────────────────────
+// ─── GET /api/libros — Listar todos los libros ────────────────────────────────
+app.get('/api/libros', (req, res) => {
+  return res.status(200).json({ total: libros.length, libros });
+});
+
+// ─── GET /api/libros/:id — Obtener un libro por ID ───────────────────────────
 app.get('/api/libros/:id', (req, res) => {
   const id = parseInt(req.params.id, 10);
   const libro = libros.find((l) => l.id === id);
 
   if (!libro) {
-    return res.status(404).json({
-      error: `Libro con id ${id} no encontrado en el catálogo.`,
-    });
+    return res.status(404).json({ error: `Libro con id ${id} no encontrado en el catálogo.` });
   }
 
   return res.status(200).json(libro);
@@ -34,9 +39,7 @@ app.post('/api/libros', (req, res) => {
   const { titulo, autor, precio, stock } = req.body;
 
   if (!titulo || !autor || precio === undefined) {
-    return res.status(400).json({
-      error: 'Faltan datos. Se requieren: titulo, autor y precio.',
-    });
+    return res.status(400).json({ error: 'Faltan datos. Se requieren: titulo, autor y precio.' });
   }
 
   const nuevoLibro = {
@@ -48,11 +51,7 @@ app.post('/api/libros', (req, res) => {
   };
 
   libros.push(nuevoLibro);
-
-  return res.status(201).json({
-    mensaje: '✅ Libro agregado exitosamente.',
-    libro: nuevoLibro,
-  });
+  return res.status(201).json({ mensaje: '✅ Libro agregado exitosamente.', libro: nuevoLibro });
 });
 
 // ─── DELETE /api/libros/:id — Eliminar un libro ───────────────────────────────
@@ -61,50 +60,25 @@ app.delete('/api/libros/:id', (req, res) => {
   const index = libros.findIndex((l) => l.id === id);
 
   if (index === -1) {
-    return res.status(404).json({
-      error: `Libro con id ${id} no encontrado. No se pudo eliminar.`,
-    });
+    return res.status(404).json({ error: `Libro con id ${id} no encontrado.` });
   }
 
   const eliminado = libros.splice(index, 1)[0];
-
-  return res.status(200).json({
-    mensaje: '🗑️ Libro eliminado exitosamente.',
-    libro: eliminado,
-  });
+  return res.status(200).json({ mensaje: '🗑️ Libro eliminado exitosamente.', libro: eliminado });
 });
 
 // ─── PATCH /api/libros/:id/stock — Reducir stock al comprar ──────────────────
 app.patch('/api/libros/:id/stock', (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { cantidad } = req.body;
-
   const libro = libros.find((l) => l.id === id);
 
-  if (!libro) {
-    return res.status(404).json({
-      error: `Libro con id ${id} no encontrado.`,
-    });
-  }
-
-  if (cantidad === undefined || cantidad <= 0) {
-    return res.status(400).json({
-      error: 'La cantidad debe ser un número mayor a 0.',
-    });
-  }
-
-  if (libro.stock < cantidad) {
-    return res.status(400).json({
-      error: `Stock insuficiente. Disponible: ${libro.stock}, solicitado: ${cantidad}.`,
-    });
-  }
+  if (!libro) return res.status(404).json({ error: `Libro con id ${id} no encontrado.` });
+  if (!cantidad || cantidad <= 0) return res.status(400).json({ error: 'La cantidad debe ser mayor a 0.' });
+  if (libro.stock < cantidad) return res.status(400).json({ error: `Stock insuficiente. Disponible: ${libro.stock}, solicitado: ${cantidad}.` });
 
   libro.stock -= cantidad;
-
-  return res.status(200).json({
-    mensaje: `📦 Stock actualizado correctamente.`,
-    libro,
-  });
+  return res.status(200).json({ mensaje: '📦 Stock actualizado.', libro });
 });
 
 // ─── Inicio del servidor ──────────────────────────────────────────────────────
@@ -112,4 +86,4 @@ app.listen(PORT, () => {
   console.log(`📚 Servicio de Catálogo corriendo en http://localhost:${PORT}`);
 });
 
-module.exports = app; // necesario para Vercel (serverless)
+module.exports = app;
